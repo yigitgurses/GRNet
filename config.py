@@ -22,8 +22,8 @@ __C.DATASETS.SHAPENET                            = edict()
 __C.DATASETS.SHAPENET.CATEGORY_FILE_PATH         = './datasets/ShapeNet.json'
 __C.DATASETS.SHAPENET.N_RENDERINGS               = 8
 __C.DATASETS.SHAPENET.N_POINTS                   = 16384
-__C.DATASETS.SHAPENET.PARTIAL_POINTS_PATH        = '/home/SENSETIME/xiehaozhe/Datasets/ShapeNet/ShapeNetCompletion/%s/partial/%s/%s/%02d.pcd'
-__C.DATASETS.SHAPENET.COMPLETE_POINTS_PATH       = '/home/SENSETIME/xiehaozhe/Datasets/ShapeNet/ShapeNetCompletion/%s/complete/%s/%s.pcd'
+__C.DATASETS.SHAPENET.PARTIAL_POINTS_PATH        = '/home/dan/Desktop/CV/Datasets/ShapeNetCompletion/%s/partial/%s/%s/%02d.pcd'
+__C.DATASETS.SHAPENET.COMPLETE_POINTS_PATH       = '/home/dan/Desktop/CV/Datasets/ShapeNetCompletion/%s/complete/%s/%s.pcd'
 __C.DATASETS.KITTI                               = edict()
 __C.DATASETS.KITTI.CATEGORY_FILE_PATH            = './datasets/KITTI.json'
 __C.DATASETS.KITTI.PARTIAL_POINTS_PATH           = '/home/SENSETIME/xiehaozhe/Datasets/KITTI/cars/%s.pcd'
@@ -72,7 +72,7 @@ __C.NETWORK.GRIDDING_LOSS_ALPHAS                 = [0.1]
 # Train
 #
 __C.TRAIN                                        = edict()
-__C.TRAIN.BATCH_SIZE                             = 32
+__C.TRAIN.BATCH_SIZE                             = 4
 __C.TRAIN.N_EPOCHS                               = 150
 __C.TRAIN.SAVE_FREQ                              = 25
 __C.TRAIN.LEARNING_RATE                          = 1e-4

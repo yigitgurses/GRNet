@@ -10,6 +10,8 @@ import torch
 from extensions.gridding import Gridding, GriddingReverse
 from extensions.cubic_feature_sampling import CubicFeatureSampling
 
+# determines if the model will use farthest  sampling or random sampling
+useFarthestSampling = True
 
 class RandomPointSampling(torch.nn.Module):
     def __init__(self, n_points):
@@ -34,6 +36,58 @@ class RandomPointSampling(torch.nn.Module):
 
         return torch.cat(ptclouds, dim=0).contiguous()
 
+
+class FarthestPointSampling(torch.nn.Module):
+    def __init__(self, n_points):
+        super(FarthestPointSampling, self).__init__()
+        self.n_points = n_points
+
+    def forward(self, pred_cloud, partial_cloud=None):
+        if partial_cloud is not None:
+            pred_cloud = torch.cat([partial_cloud, pred_cloud], dim=1)
+
+        _ptcloud = torch.split(pred_cloud, 1, dim=0)
+        ptclouds = []
+
+        for p in _ptcloud:
+            non_zeros = torch.sum(p, dim=2).ne(0)
+            p = p[non_zeros].unsqueeze(dim=0)
+
+            # if we have less points thane n_points, just take a permutation of all points (IFPS is irrelevant)
+            n_pts = p.size(1)
+            if n_pts < self.n_points:
+                rnd_idx = torch.cat([torch.randint(0, n_pts, (self.n_points, ))])
+                ptclouds.append(p[:, rnd_idx, :])
+                continue
+
+            # if there are more points than n_points, apply IFPS to select n_points
+            device = p.device
+            B, N, C = p.shape
+            centroids = torch.zeros(B, self.n_points, dtype=torch.long).to(device)
+
+            # initialize distances on the infinity
+            distance = torch.ones(B, N).to(device) * 1e10
+
+            # TODO figure out RAN
+            # selects an initial point ?
+            if True: # RAN:
+                farthest = torch.randint(0, 1, (B,), dtype=torch.long).to(device)
+            else:
+                farthest = torch.randint(1, 2, (B,), dtype=torch.long).to(device)
+            
+            for i in range(self.n_points):
+                centroids[:, i] = farthest
+                centroid = p[0, farthest, :]
+                diff = (p - centroid) ** 2
+                dist = torch.sum(diff, dim=2)
+
+                mask = dist < distance
+                distance[mask] = dist[mask]
+                farthest = torch.max(distance, dim=1)[1]
+
+            res = p[:,centroids[0],:]
+            ptclouds.append(res)
+        return torch.cat(ptclouds, dim=0).contiguous()
 
 class GRNet(torch.nn.Module):
     def __init__(self, cfg):
@@ -92,7 +146,10 @@ class GRNet(torch.nn.Module):
             torch.nn.ReLU()
         )
         self.gridding_rev = GriddingReverse(scale=64)
-        self.point_sampling = RandomPointSampling(n_points=2048)
+        if  useFarthestSampling:
+            self.point_sampling = FarthestPointSampling(n_points=2048)
+        else:
+            self.point_sampling = RandomPointSampling(n_points=2048)
         self.feature_sampling = CubicFeatureSampling()
         self.fc11 = torch.nn.Sequential(
             torch.nn.Linear(1792, 1792),
